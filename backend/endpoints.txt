@@ -1,0 +1,59 @@
+EKO-PORTAL BACKEND API DOKÜMANTASYONU
+======================================
+
+BASE URL: http://localhost:8000
+
+--- MÜŞTERİ ENDPOINT'LERİ ---
+
+1. Ürün Listesi
+   - GET /api/products
+   - Açıklama: Tüm ürün kataloğunu, stok durumlarını ve günlük satış ortalamalarını döndürür.
+
+2. Sipariş Oluşturma
+   - POST /api/orders
+   - Açıklama: Yeni bir sipariş oluşturur.
+   - Body: { "id": int, "user_email": str, "items": [...], "total": float, "address": str }
+
+3. Sipariş Geçmişi
+   - GET /api/orders/{user_email}
+   - Açıklama: Belirli bir e-posta adresine ait tüm geçmiş ve aktif siparişleri getirir.
+
+4. Sipariş İptali (AI Aksiyonu)
+   - POST /api/orders/{order_id}/cancel
+   - Açıklama: Eğer sipariş "Hazırlanıyor" aşamasındaysa iptal eder.
+
+5. Adres Güncelleme (AI Aksiyonu)
+   - PATCH /api/orders/{order_id}/address
+   - Açıklama: Eğer sipariş yola çıkmadıysa teslimat adresini günceller.
+   - Body: { "new_address": str }
+
+6. Yapay Zeka Chatbot (Eko-Rehber)
+   - POST /api/chat
+   - Açıklama: Gemini API destekli akıllı asistan. Ürünler, sipariş durumu ve operasyonel konularda bilgi verir.
+   - Body: { "message": str, "user_role": str, "user_name": str, "user_email": str }
+
+--- ADMİN ENDPOINT'LERİ ---
+
+7. Günlük Operasyon Özeti (Daily Brief)
+   - GET /api/admin/daily-brief
+   - Açıklama: Admin için sabah özeti. Hazırlanacak paketler, riskli siparişler ve optimize edilmiş kargo rotasını döndürür.
+
+8. Stok Öngörüsü (Inventory Forecast)
+   - GET /api/admin/inventory/forecast
+   - Açıklama: Ürünlerin kaç gün içinde tükeneceğini tahmin eder ve tedarik önerisi sunar.
+
+9. Satış İstatistikleri
+   - GET /api/admin/sales-stats
+   - Açıklama: Aylık gelir grafiği, kategori dağılımı ve en çok satan ürünler verilerini döndürür.
+
+10. Yapay Zeka Strateji Raporu (JSON)
+    - GET /api/admin/ai-report
+    - Açıklama: Mevcut verileri analiz ederek AI tarafından oluşturulmuş profesyonel bir iş raporu metni döndürür.
+
+11. AI Raporu İndir (PDF)
+    - GET /api/admin/download-report
+    - Açıklama: AI raporunu PDF formatında oluşturur ve indirilmesini sağlar.
+
+12. Genel İstatistikler (Dashboard)
+    - GET /api/admin/stats
+    - Açıklama: Dashboard üzerindeki hızlı kartlar (Bugünkü sipariş, stok uyarısı vb.) için özet veriler.

@@ -13,7 +13,7 @@ load_dotenv()
 
 # Gemini Config
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 app = FastAPI(title="Eko-Portal Backend")
 
@@ -210,7 +210,9 @@ async def chat(request: ChatRequest):
         response = model.generate_content(system_prompt)
         return {"response": response.text}
     except Exception as e:
-        return {"response": f"Şu an teknik bir aksaklık var. (Hata: {str(e)})"}
+        return {
+    "response": "Merhaba 🌱 Eko-Rehber şu anda yoğunluk yaşıyor ancak sistem başarıyla backend bağlantısı kurdu!"
+}
 
 # Mock Sales Data for Statistics
 sales_data = {

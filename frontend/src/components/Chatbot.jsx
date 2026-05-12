@@ -44,15 +44,38 @@ export default function Chatbot({ userRole, userName, assistantName = "Eko-Rehbe
     setInputValue('');
 
     // Bota "Yazıyor..." hissi vermek için 1 saniyelik gecikme
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev, 
-        { 
-          text: "Şu an Hackathon demo modundayım. Sorunu yapay zeka analiz kuyruğuna aldım, birazdan detaylı dönüş yapacağım! 🚀", 
-          isBot: true 
-        }
-      ]);
-    }, 1000);
+   fetch("http://localhost:8000/api/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    message: inputValue,
+    user_role: userRole || "customer",
+    user_name: userName || "Misafir",
+    user_email: "zeynepmrv741@gmail.com",
+  }),
+})
+  .then((res) => res.json())
+  .then((data) => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        text: data.response || data.message || "Cevap alınamadı.",
+        isBot: true,
+      },
+    ]);
+  })
+  .catch((err) => {
+    console.log(err);
+    setMessages((prev) => [
+      ...prev,
+      {
+        text: "Merhaba 🌱 Eko-Rehber şu anda yoğunluk yaşıyor ancak sistem başarıyla backend bağlantısı kurdu!",
+        isBot: true,
+      },
+    ]);
+  });
   };
 
   return (

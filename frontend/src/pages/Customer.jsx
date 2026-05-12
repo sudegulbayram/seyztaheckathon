@@ -17,14 +17,17 @@ export default function Customer({ user, openAuth }) {
     }
   }, [notification]);
 
-  const products = [
-    { id: 1, name: "Organik Sızma Zeytinyağı", price: 280, img: "🫒", tag: "En Çok Satan" },
-    { id: 2, name: "Yerli Besi Köy Yumurtası", price: 95, img: "🥚", tag: "Yeni" },
-    { id: 3, name: "Taze Bahçe Domatesi", price: 45, img: "🍅", tag: "İndirim" },
-    { id: 4, name: "Ev Yapımı Erişte", price: 85, img: "🍝", tag: "Doğal" },
-    { id: 5, name: "Çiçek Balı (850g)", price: 320, img: "🍯", tag: "Sınırlı Stok" },
-    { id: 6, name: "Kurutulmuş Patlıcan", price: 60, img: "🍆", tag: "Geleneksel" }
-  ];
+ const [products, setProducts] = useState([]);
+ useEffect(() => {
+  fetch("http://localhost:8000/api/products")
+    .then((res) => res.json())
+    .then((data) => {
+      setProducts(data);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+}, []);
 
   const normalizeText = (str) => str.toLowerCase().replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c').trim();
   const getLevenshteinDistance = (a, b) => {
@@ -105,7 +108,32 @@ export default function Customer({ user, openAuth }) {
 
   const totalPrice = cart.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
   const isFormValid = paymentInfo.card.replace(/\s/g, '').length === 16 && paymentInfo.cvv.length === 3 && paymentInfo.expiry.length === 5 && paymentInfo.address.length >= 15 && Object.values(errors).every(x => x === "");
+const createOrder = () => {
+  const orderData = {
+    id: Date.now(),
+    user_email: user?.email || "zeynepmrv741@gmail.com",
+    items: cart,
+    total: totalPrice,
+    address: paymentInfo.address,
+  };
 
+  fetch("http://localhost:8000/api/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(orderData),
+  })
+    .then((res) => res.json())
+    .then(() => {
+      setCart([]);
+      setView("success");
+    })
+    .catch((err) => {
+      console.log(err);
+      alert("Sipariş oluşturulurken hata oluştu.");
+    });
+};
   // --- KRİTİK NOKTA: GİRİŞ KONTROLÜ (GUARD) ---
   const handleProtectedAction = (actionView) => {
     if (!user) {
@@ -210,7 +238,7 @@ export default function Customer({ user, openAuth }) {
                 <div style={{ ...inputGroup, borderColor: errors.card ? '#ef4444' : '#eee' }}><CreditCard size={18} color="#9ca3af" /> <input type="text" placeholder="0000 0000 0000 0000" value={paymentInfo.card} onChange={(e) => handlePaymentInput('card', e.target.value)} style={{ ...input, letterSpacing: '2px', fontWeight: 'bold' }} /></div>{errors.card && <span style={errorText}>{errors.card}</span>}
                 <div style={{ display: 'flex', gap: '10px' }}><div style={{ flex: 1 }}><div style={{ ...inputGroup, borderColor: errors.expiry ? '#ef4444' : '#eee' }}><input type="text" placeholder="AA/YY" value={paymentInfo.expiry} onChange={(e) => handlePaymentInput('expiry', e.target.value)} style={input} /></div>{errors.expiry && <span style={errorText}>{errors.expiry}</span>}</div><div style={{ flex: 1 }}><div style={{ ...inputGroup, borderColor: errors.cvv ? '#ef4444' : '#eee' }}><input type="text" placeholder="CVV" value={paymentInfo.cvv} onChange={(e) => handlePaymentInput('cvv', e.target.value)} style={input} /></div>{errors.cvv && <span style={errorText}>{errors.cvv}</span>}</div></div>
                 <div style={totalSummary}>Ödenecek Tutar: <strong>{totalPrice} TL</strong></div>
-                <button style={{ ...payBtn, opacity: !isFormValid ? 0.6 : 1, cursor: isFormValid ? 'pointer' : 'not-allowed' }} disabled={!isFormValid} onClick={() => setView('success')}>
+                <button style={{ ...payBtn, opacity: !isFormValid ? 0.6 : 1, cursor: isFormValid ? 'pointer' : 'not-allowed' }} disabled={!isFormValid} onClick={createOrder}>
                   {isFormValid ? "Ödemeyi Tamamla" : "Bilgileri Kontrol Edin"}
                 </button>
               </div>

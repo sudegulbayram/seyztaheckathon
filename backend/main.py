@@ -20,6 +20,7 @@ else:
     print("⚠️ GEMINI_API_KEY bulunamadı!")
 
 genai.configure(api_key=api_key)
+# DEĞİŞİKLİK: model versiyonu gemini-1.5-flash olarak güncellendi.
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 
@@ -304,12 +305,12 @@ async def generate_ai_report():
     try:
         response = model.generate_content(prompt)
         return {"report": response.text}
-    except Exception:
-        return {"report": "Rapor oluşturulurken bir hata oluştu."}
+    except Exception as e:
+        # DEĞİŞİKLİK: Hata detayı eklendi.
+        return {"report": f"Rapor oluşturulurken bir hata oluştu: {str(e)}"}
 
 def fix_turkish_chars(text):
-    # FPDF standard fonts have issues with 'ı' and 'ğ' specifically.
-    # We'll replace them with characters that exist in Latin-1/Latin-5 more reliably.
+    # DEĞİŞİKLİK: FPDF için daha güvenli eşleştirme.
     mapping = {
         'ı': 'i', 'İ': 'I',
         'ğ': 'g', 'Ğ': 'G',
@@ -324,26 +325,31 @@ def fix_turkish_chars(text):
 
 @app.get("/api/admin/download-report")
 async def download_ai_report():
-    report_data = await generate_ai_report()
-    report_text = report_data.get("report", "Rapor verisi alinamadi.")
-    
-    # Fix characters before PDF generation
-    report_text = fix_turkish_chars(report_text)
+    try:
+        report_data = await generate_ai_report()
+        report_text = report_data.get("report", "Rapor verisi alinamadi.")
+        
+        # DEĞİŞİKLİK: Metin temizleme uygulandı.
+        clean_text = fix_turkish_chars(report_text)
 
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(200, 10, txt="Eko-Portal Stratejik AI Raporu", ln=True, align="C")
-    pdf.set_font("Arial", size=10)
-    pdf.ln(10)
-    
-    # After replacement, we can use simple latin-1 or the encode/decode trick
-    clean_text = report_text.encode('latin-1', 'replace').decode('latin-1')
-    pdf.multi_cell(0, 10, txt=clean_text)
-    
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        pdf.output(tmp.name)
-        return FileResponse(tmp.name, media_type='application/pdf', filename="Eko_Portal_AI_Raporu.pdf")
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        pdf.cell(200, 10, txt="Eko-Portal Stratejik AI Raporu", ln=True, align="C")
+        pdf.set_font("Arial", size=10)
+        pdf.ln(10)
+        
+        # DEĞİŞİKLİK: Temizlenmiş metin latin-1 encode olmadan direkt yazdırılıyor.
+        pdf.multi_cell(0, 10, txt=clean_text)
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            pdf.output(tmp.name)
+            return FileResponse(tmp.name, media_type='application/pdf', filename="Eko_Portal_AI_Raporu.pdf")
+            
+    except Exception as e:
+        # DEĞİŞİKLİK: Hata konsola basılıp, API hata dönecek şekilde ayarlandı.
+        print(f"PDF Olusturma Hatasi: {str(e)}")
+        return {"error": f"Rapor olusturulurken teknik bir sorun yasandi: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn

@@ -83,9 +83,9 @@ export default function Admin() {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '18px', color: '#64748b' }}>Yönetici Paneli Yükleniyor...</div>;
 
   return (
-    <div style={{ display: 'flex', flex: 1, minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div className="admin-mobile-container" style={{ display: 'flex', flex: 1, minHeight: '100vh', backgroundColor: '#f9fafb' }}>
       
-      <aside style={{ width: '280px', backgroundColor: '#1e293b', color: 'white', padding: '20px' }}>
+      <aside className="admin-mobile-sidebar" style={{ width: '280px', backgroundColor: '#1e293b', color: 'white', padding: '20px' }}>
         <h2 style={{ fontSize: '20px', marginBottom: '30px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Bot size={28} /> Eko-Sistem AI
         </h2>
@@ -101,11 +101,11 @@ export default function Admin() {
         </div>
       </aside>
 
-      <main style={{ flex: 1, padding: '30px 40px' }}>
+      <main className="admin-mobile-content" style={{ flex: 1, padding: '30px 40px' }}>
         
         {activeTab === 'dashboard' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
               <div style={cardStyle}>
                 <span style={{ color: '#6b7280', fontSize: '14px' }}>Bugünkü Sipariş</span>
                 <div style={{ fontSize: '32px', fontWeight: 'bold', marginTop: '5px' }}>{stats?.today_orders || 0}</div>
@@ -127,7 +127,7 @@ export default function Admin() {
                 <Bot size={20} /> Günlük Operasyon Özeti
               </h4>
               <p style={{ color: '#14532d', fontSize: '15px', lineHeight: '1.6' }}>{brief?.summary}</p>
-              <div style={{ marginTop: '15px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={{ marginTop: '15px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
                 <div>
                   <h5 style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#166534' }}>Öncelikli Görevler:</h5>
                   {brief?.tasks.map((task, idx) => (
@@ -149,7 +149,7 @@ export default function Admin() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
               {stats?.ai_suggestions.map((sug, idx) => (
                 <div key={idx} style={{ ...cardStyle, borderLeft: `5px solid ${sug.type === 'logistic' ? '#3b82f6' : '#f59e0b'}` }}>
                   <h4 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: sug.type === 'logistic' ? '#1e40af' : '#92400e', margin: '0 0 10px 0' }}>
@@ -165,38 +165,40 @@ export default function Admin() {
         {activeTab === 'orders' && (
           <div style={cardStyle}>
             <h4 style={{ marginBottom: '20px' }}>Sistemdeki Tüm Siparişler</h4>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #eee', textAlign: 'left', color: '#6b7280', fontSize: '14px' }}>
-                  <th style={{ padding: '12px' }}>ID</th>
-                  <th>Müşteri</th>
-                  <th>Toplam</th>
-                  <th>Durum</th>
-                  <th>Risk Skoru</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map(order => (
-                  <tr key={order.id} style={{ borderBottom: '1px solid #f9fafb' }}>
-                    <td style={{ padding: '12px' }}>#{order.id}</td>
-                    <td>{order.user_email}</td>
-                    <td>{order.total} TL</td>
-                    <td>
-                      <span style={badgeStyle(
-                        order.status === 'Yolda' ? '#dcfce7' : order.status === 'Hazırlanıyor' ? '#fef9c3' : '#f3f4f6',
-                        order.status === 'Yolda' ? '#166534' : order.status === 'Hazırlanıyor' ? '#854d0e' : '#374151'
-                      )}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td style={{ color: order.risk_score > 0.5 ? '#ef4444' : '#059669', fontSize: '13px', fontWeight: 'bold' }}>
-                      {order.risk_score > 0.5 && <AlertTriangle size={14} style={{ marginRight: '5px' }} />}
-                      {Math.round(order.risk_score * 100)}%
-                    </td>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #eee', textAlign: 'left', color: '#6b7280', fontSize: '14px' }}>
+                    <th style={{ padding: '12px' }}>ID</th>
+                    <th>Müşteri</th>
+                    <th>Toplam</th>
+                    <th>Durum</th>
+                    <th>Risk Skoru</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {orders.map(order => (
+                    <tr key={order.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                      <td style={{ padding: '12px' }}>#{order.id}</td>
+                      <td>{order.user_email}</td>
+                      <td>{order.total} TL</td>
+                      <td>
+                        <span style={badgeStyle(
+                          order.status === 'Yolda' ? '#dcfce7' : order.status === 'Hazırlanıyor' ? '#fef9c3' : '#f3f4f6',
+                          order.status === 'Yolda' ? '#166534' : order.status === 'Hazırlanıyor' ? '#854d0e' : '#374151'
+                        )}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td style={{ color: order.risk_score > 0.5 ? '#ef4444' : '#059669', fontSize: '13px', fontWeight: 'bold' }}>
+                        {order.risk_score > 0.5 && <AlertTriangle size={14} style={{ marginRight: '5px' }} />}
+                        {Math.round(order.risk_score * 100)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -213,7 +215,9 @@ export default function Admin() {
                     backgroundColor: f.recommendation === 'Acil Sipariş' ? '#fef2f2' : 'white',
                     display: 'flex', 
                     justifyContent: 'space-between', 
-                    alignItems: 'center' 
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '10px'
                   }}>
                     <div>
                       <strong style={{ color: f.recommendation === 'Acil Sipariş' ? '#991b1b' : '#1e293b' }}>{f.product}</strong>
@@ -257,19 +261,19 @@ export default function Admin() {
               <h4 style={{ marginBottom: '15px', color: '#1e293b' }}>Yeni Yetkili Ekle</h4>
               <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <input 
-                  style={{ padding: '10px 15px', borderRadius: '8px', border: '1px solid #d1d5db', flex: 1, outline: 'none' }} 
+                  style={{ padding: '10px 15px', borderRadius: '8px', border: '1px solid #d1d5db', flex: 1, outline: 'none', minWidth: '200px' }} 
                   placeholder="Ad Soyad" 
                   value={newAdmin.name} 
                   onChange={(e) => setNewAdmin({...newAdmin, name: e.target.value})} 
                 />
                 <input 
-                  style={{ padding: '10px 15px', borderRadius: '8px', border: '1px solid #d1d5db', flex: 1, outline: 'none' }} 
+                  style={{ padding: '10px 15px', borderRadius: '8px', border: '1px solid #d1d5db', flex: 1, outline: 'none', minWidth: '200px' }} 
                   placeholder="E-posta Adresi" 
                   value={newAdmin.email} 
                   onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})} 
                 />
                 <select 
-                  style={{ padding: '10px 15px', borderRadius: '8px', border: '1px solid #d1d5db', outline: 'none', backgroundColor: 'white' }} 
+                  style={{ padding: '10px 15px', borderRadius: '8px', border: '1px solid #d1d5db', outline: 'none', backgroundColor: 'white', flex: 1, minWidth: '200px' }} 
                   value={newAdmin.role} 
                   onChange={(e) => setNewAdmin({...newAdmin, role: e.target.value})}
                 >
@@ -279,7 +283,7 @@ export default function Admin() {
                 </select>
                 <button 
                   onClick={handleAddAdmin} 
-                  style={{ background: '#1e293b', color: 'white', border: 'none', padding: '0 20px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+                  style={{ background: '#1e293b', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
                   <Plus size={18} /> Ekle
                 </button>
               </div>
@@ -287,38 +291,40 @@ export default function Admin() {
 
             <div style={cardStyle}>
               <h4 style={{ marginBottom: '15px', color: '#1e293b' }}>Aktif Yetkililer</h4>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #eee', textAlign: 'left', color: '#6b7280', fontSize: '14px' }}>
-                    <th style={{ padding: '12px' }}>Yetkili Personel</th>
-                    <th>E-posta</th>
-                    <th>Rol / Yetki</th>
-                    <th>İşlem</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {admins.map(adm => (
-                    <tr key={adm.id} style={{ borderBottom: '1px solid #f9fafb' }}>
-                      <td style={{ padding: '12px', fontWeight: 'bold', color: '#1f2937' }}>{adm.name}</td>
-                      <td style={{ color: '#6b7280', fontSize: '14px' }}>{adm.email}</td>
-                      <td>
-                        <span style={badgeStyle(adm.role === 'Kurucu Yönetici' ? '#dcfce7' : '#f3f4f6', adm.role === 'Kurucu Yönetici' ? '#166534' : '#374151')}>
-                          {adm.role}
-                        </span>
-                      </td>
-                      <td>
-                        {adm.role !== 'Kurucu Yönetici' && (
-                          <button 
-                            onClick={() => setAdmins(admins.filter(a => a.id !== adm.id))}
-                            style={{ background: '#fee2e2', color: '#ef4444', border: 'none', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </td>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #eee', textAlign: 'left', color: '#6b7280', fontSize: '14px' }}>
+                      <th style={{ padding: '12px' }}>Yetkili Personel</th>
+                      <th>E-posta</th>
+                      <th>Rol / Yetki</th>
+                      <th>İşlem</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {admins.map(adm => (
+                      <tr key={adm.id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                        <td style={{ padding: '12px', fontWeight: 'bold', color: '#1f2937' }}>{adm.name}</td>
+                        <td style={{ color: '#6b7280', fontSize: '14px' }}>{adm.email}</td>
+                        <td>
+                          <span style={badgeStyle(adm.role === 'Kurucu Yönetici' ? '#dcfce7' : '#f3f4f6', adm.role === 'Kurucu Yönetici' ? '#166534' : '#374151')}>
+                            {adm.role}
+                          </span>
+                        </td>
+                        <td>
+                          {adm.role !== 'Kurucu Yönetici' && (
+                            <button 
+                              onClick={() => setAdmins(admins.filter(a => a.id !== adm.id))}
+                              style={{ background: '#fee2e2', color: '#ef4444', border: 'none', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

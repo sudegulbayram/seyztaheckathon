@@ -45,3 +45,23 @@ body {
 .hero-anim {
   animation: fadeInDown 1s ease-out forwards;
 }
+
+/* --- MOBİL UYUMLULUK (RESPONSIVE) --- */
+@media (max-width: 768px) {
+  .admin-mobile-container {
+    flex-direction: column !important;
+  }
+  
+  .admin-mobile-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    border-right: none !important;
+    border-bottom: 2px solid #e1ede8;
+    padding-bottom: 15px !important;
+  }
+
+  .admin-mobile-content {
+    padding: 15px !important;
+  }
+}

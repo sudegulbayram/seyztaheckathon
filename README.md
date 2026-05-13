@@ -15,7 +15,7 @@ Eko-Portal, yerel üreticileri ve kooperatifleri dijitalleştirerek modern tekno
 - **Akıllı İptal Akışı:** Chate "siparişimi iptal et" yazınca AI'nın onay istemesi ve "onaylıyorum" denince işlemi iptal eder.
 - **Ürün Danışmanlığı:** Mevcut stoklar ve ürün fiyatları hakkında anlık bilgilendirme.
 
-### 🛡️ Yönetici (Admin) Paneli
+###  Yönetici (Admin) Paneli
 - **Stratejik Dashboard:** Toplam sipariş, stok uyarıları ve operasyonel özet.
 - **VRP Rota Optimizasyonu:** Dağıtım araçları için AI destekli en verimli rota önerileri.
 - **Stok Tahminleme:** Satış hızına göre ürünlerin ne zaman biteceğine dair AI tahminleri.
@@ -48,7 +48,7 @@ npm run dev
 
 *Not: Kendi hesabınızı oluşturmak için "Kaydolun" seçeneğini kullanabilirsiniz (Tarayıcı hafızasına kaydedilir).*
 
-## 📄 Teknolojiler
+##  Teknolojiler
 - **Frontend:** React, Lucide Icons, Vanilla CSS
 - **Backend:** Python, FastAPI, Gemini AI API, FPDF
 - **Veritabanı:** Bellek içi (In-memory) mock veritabanı

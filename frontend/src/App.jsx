@@ -61,7 +61,7 @@ export default function App() {
     } else {
       const foundUser = usersDb.find(u => u.email === loginData.email && u.password === loginData.password);
       if (foundUser) {
-        setUser({ role: 'customer', name: foundUser.name });
+        setUser({ role: 'customer', name: foundUser.name, email: foundUser.email });
         setIsAuthModalOpen(false);
         setNotification(`Hoş geldin, ${foundUser.name}!`);
         setLoginError('');
@@ -167,7 +167,7 @@ export default function App() {
       </div>
 
       {/* --- DİNAMİK İSİM İÇİN userName EKLENDİ --- */}
-      <Chatbot userRole={user?.role} userName={user?.name} assistantName="Eko-Rehber" />
+      <Chatbot userRole={user?.role} userName={user?.name} userEmail={user?.email} assistantName="Eko-Rehber" />
 
       {/* SOFT SAGE FOOTER */}
       <footer style={footerContainer}>

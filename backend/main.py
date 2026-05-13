@@ -9,11 +9,19 @@ from fpdf import FPDF
 from fastapi.responses import FileResponse
 import tempfile
 
-load_dotenv()
+load_dotenv(override=True)
 
 # Gemini Config
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-2.0-flash')
+api_key = os.getenv("GEMINI_API_KEY")
+if api_key:
+    masked_key = f"{api_key[:4]}...{api_key[-4:]}"
+    print(f"🚀 Gemini API Key yüklendi: {masked_key}")
+else:
+    print("⚠️ GEMINI_API_KEY bulunamadı!")
+
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel('gemini-2.5-flash')
+
 
 app = FastAPI(title="Eko-Portal Backend")
 
@@ -91,6 +99,16 @@ orders = [
         "status": "Hazırlanıyor",
         "shipping_details": "Sipariş onaylandı, paketleme aşamasında.",
         "risk_score": 0.8
+    },
+    {
+        "id": 1286, 
+        "user_email": "sude@eko.com", 
+        "items": [{"id": 5, "name": "Çiçek Balı (850g)", "price": 320, "quantity": 1}],
+        "total": 320,
+        "address": "Beşiktaş, İstanbul",
+        "status": "Hazırlanıyor",
+        "shipping_details": "Sipariş alındı, paketleme bekliyor.",
+        "risk_score": 0.2
     }
 ]
 
@@ -137,7 +155,7 @@ async def get_daily_brief():
     low_stock = [p for p in products if p["stock"] < 50]
     
     return {
-        "date": "11 Mayıs 2026",
+        "date": "13 Mayıs 2026",
         "summary": f"Bugün hazırlanması gereken {len(pending_orders)} sipariş var. {len(high_risk_orders)} siparişte gecikme riski tespit edildi.",
         "tasks": [
             f"{len(pending_orders)} adet paketi saat 12:00'ye kadar kargoya hazırla.",
@@ -161,9 +179,8 @@ async def get_inventory_forecast():
 
 @app.get("/api/admin/stats")
 async def get_admin_stats():
-    # ... existing stats logic (simplified for breivity in response but keeping core)
     return {
-        "today_orders": 24,
+        "today_orders": len(orders),
         "stock_warnings": len([p for p in products if p["stock"] < 50]),
         "ai_suggestions": [
             {
@@ -179,9 +196,15 @@ async def get_admin_stats():
         ]
     }
 
+@app.get("/api/admin/orders")
+async def get_all_orders():
+    return orders
+
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
-    # Prepare system context with user specific data
+    if not os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") == "buraya_kendi_api_keyinizi_yazin":
+         return {"response": "⚠️ Gemini API Anahtarı eksik veya hatalı! Lütfen backend/.env dosyanızı kontrol edin. (Sistem şu an simülasyon modunda)"}
+    
     user_orders = [o for o in orders if o["user_email"] == request.user_email]
     orders_info = "\n".join([f"- Sipariş #{o['id']}: Durum: {o['status']}, Adres: {o['address']}, Detay: {o['shipping_details']}" for o in user_orders])
     product_info = "\n".join([f"- {p['name']}: {p['price']} TL (Stok: {p['stock']})" for p in products])
@@ -198,21 +221,35 @@ async def chat(request: ChatRequest):
     
     Yeteneklerin & Kuralların:
     1. Ürünler ve sipariş durumu hakkında bilgi ver.
-    2. Eğer kullanıcı bir siparişi İPTAL etmek isterse ve durumu 'Hazırlanıyor' ise, ona bunu yapabileceğini söyle ve şu URL'e gitmesini öner: /orders/cancel (Simüle ediyoruz).
-    3. Eğer kullanıcı ADRES DEĞİŞTİRMEK isterse ve durumu 'Hazırlanıyor' ise yardımcı ol.
-    4. Kargo gecikme riski varsa (risk_score > 0.5), kullanıcıyı nazikçe bilgilendir.
-    5. Cevapların kısa, çözüm odaklı ve profesyonel olsun.
+    2. Eğer kullanıcı bir siparişi İPTAL etmek isterse ve durumu 'Hazırlanıyor' ise, direkt iptal etme. Önce "Siparişinizi iptal etmek istediğinizden emin misiniz? Onaylamak için 'onaylıyorum' yazın." de.
+    3. Eğer kullanıcı 'onaylıyorum' yazarsa ve bekleyen bir iptal talebi varsa (Hazırlanıyor durumunda siparişi varsa), SİSTEME ÖZEL BİR KOMUT GÖNDER: [ACTION:CANCEL_ORDER_1286] (Buradaki ID kullanıcının hazırlanan sipariş ID'si olmalı).
+    4. İptal işlemi başarılı olursa kullanıcıya bilgi ver.
+    5. Kargo gecikme riski varsa (risk_score > 0.5), kullanıcıyı nazikçe bilgilendir.
+    6. Cevapların kısa, çözüm odaklı ve profesyonel olsun.
     
     Kullanıcı Mesajı: {request.message}
     """
     
     try:
         response = model.generate_content(system_prompt)
-        return {"response": response.text}
+        ai_response = response.text
+        
+        # Action Handler: CANCEL_ORDER
+        if "[ACTION:CANCEL_ORDER_" in ai_response:
+            import re
+            match = re.search(r"\[ACTION:CANCEL_ORDER_(\d+)\]", ai_response)
+            if match:
+                order_id = int(match.group(1))
+                # Call internal cancel logic
+                for order in orders:
+                    if order["id"] == order_id and order["status"] == "Hazırlanıyor":
+                        order["status"] = "İptal Edildi"
+                        ai_response = ai_response.replace(f"[ACTION:CANCEL_ORDER_{order_id}]", "")
+                        ai_response += f"\n\n✅ Sipariş #{order_id} başarıyla iptal edildi."
+        
+        return {"response": ai_response}
     except Exception as e:
-        return {
-    "response": "Merhaba 🌱 Eko-Rehber şu anda yoğunluk yaşıyor ancak sistem başarıyla backend bağlantısı kurdu!"
-}
+        return {"response": f"🌱 Eko-Rehber şu anda bir teknik zorluk yaşıyor. Hata: {str(e)}"}
 
 # Mock Sales Data for Statistics
 sales_data = {
@@ -270,10 +307,28 @@ async def generate_ai_report():
     except Exception:
         return {"report": "Rapor oluşturulurken bir hata oluştu."}
 
+def fix_turkish_chars(text):
+    # FPDF standard fonts have issues with 'ı' and 'ğ' specifically.
+    # We'll replace them with characters that exist in Latin-1/Latin-5 more reliably.
+    mapping = {
+        'ı': 'i', 'İ': 'I',
+        'ğ': 'g', 'Ğ': 'G',
+        'ş': 's', 'Ş': 'S',
+        'ç': 'c', 'Ç': 'C',
+        'ü': 'u', 'Ü': 'U',
+        'ö': 'o', 'Ö': 'O'
+    }
+    for search, replace in mapping.items():
+        text = text.replace(search, replace)
+    return text
+
 @app.get("/api/admin/download-report")
 async def download_ai_report():
     report_data = await generate_ai_report()
-    report_text = report_data.get("report", "Rapor verisi alınamadı.")
+    report_text = report_data.get("report", "Rapor verisi alinamadi.")
+    
+    # Fix characters before PDF generation
+    report_text = fix_turkish_chars(report_text)
 
     pdf = FPDF()
     pdf.add_page()
@@ -282,7 +337,7 @@ async def download_ai_report():
     pdf.set_font("Arial", size=10)
     pdf.ln(10)
     
-    # Simple encoding fix for PDF
+    # After replacement, we can use simple latin-1 or the encode/decode trick
     clean_text = report_text.encode('latin-1', 'replace').decode('latin-1')
     pdf.multi_cell(0, 10, txt=clean_text)
     

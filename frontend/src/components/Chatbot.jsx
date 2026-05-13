@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, Bot, Sparkles } from 'lucide-react';
 
-export default function Chatbot({ userRole, userName, assistantName = "Eko-Rehber" }) {
+export default function Chatbot({ userRole, userName, userEmail, assistantName = "Eko-Rehber" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -9,25 +9,18 @@ export default function Chatbot({ userRole, userName, assistantName = "Eko-Rehbe
 
   // Ziyaretçi ve Rol bazlı AKILLI VE DİNAMİK karşılama
   useEffect(() => {
-    // Sadece ilk ismi almak için (örn: "Sudegül Bayram" -> "Sudegül")
     const firstName = userName ? userName.split(' ')[0] : '';
-
-    // 1. Durum: Henüz giriş yapılmamış (Ziyaretçi)
     let welcomeText = `Merhaba! Ben ${assistantName}, Eko-Portal'a hoş geldin. Üretici kooperatiflerimiz veya sistemimiz hakkında sana nasıl yardımcı olabilirim?`;
     
-    // 2. Durum: Admin girişi yapılmış
     if (userRole === 'admin') {
       welcomeText = `Merhaba ${firstName}! Sistem analizleri, VRP rota optimizasyonu veya stok durumu hakkında ne öğrenmek istersin?`;
-    } 
-    // 3. Durum: Müşteri girişi yapılmış
-    else if (userRole === 'customer') {
+    } else if (userRole === 'customer') {
       welcomeText = `Tekrar hoş geldin ${firstName}! Siparişlerin veya yeni ürünlerimiz hakkında sormak istediğin bir şey var mı?`;
     }
 
     setMessages([{ text: welcomeText, isBot: true }]);
   }, [userRole, userName, assistantName]);
 
-  // Yeni mesaj geldiğinde otomatik en alta kaydır
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -38,12 +31,10 @@ export default function Chatbot({ userRole, userName, assistantName = "Eko-Rehbe
     e.preventDefault();
     if (!inputValue.trim()) return;
 
-    // Kullanıcının mesajını ekle
     const newMessages = [...messages, { text: inputValue, isBot: false }];
     setMessages(newMessages);
     setInputValue('');
 
-    // Bota "Yazıyor..." hissi vermek için 1 saniyelik gecikme
    fetch("http://localhost:8000/api/chat", {
   method: "POST",
   headers: {
@@ -53,7 +44,7 @@ export default function Chatbot({ userRole, userName, assistantName = "Eko-Rehbe
     message: inputValue,
     user_role: userRole || "customer",
     user_name: userName || "Misafir",
-    user_email: "zeynepmrv741@gmail.com",
+    user_email: userEmail || "misafir@eko.com",
   }),
 })
   .then((res) => res.json())
@@ -61,7 +52,7 @@ export default function Chatbot({ userRole, userName, assistantName = "Eko-Rehbe
     setMessages((prev) => [
       ...prev,
       {
-        text: data.response || data.message || "Cevap alınamadı.",
+        text: data.response || "Üzgünüm, şu an cevap veremiyorum.",
         isBot: true,
       },
     ]);
@@ -71,7 +62,7 @@ export default function Chatbot({ userRole, userName, assistantName = "Eko-Rehbe
     setMessages((prev) => [
       ...prev,
       {
-        text: "Merhaba 🌱 Eko-Rehber şu anda yoğunluk yaşıyor ancak sistem başarıyla backend bağlantısı kurdu!",
+        text: "Bağlantı sorunu yaşıyorum 🌱 Lütfen internet bağlantınızı ve backend servisini kontrol edin.",
         isBot: true,
       },
     ]);
@@ -145,7 +136,6 @@ export default function Chatbot({ userRole, userName, assistantName = "Eko-Rehbe
   );
 }
 
-// --- STİLLER ---
 const floatingBtnStyle = { position: 'fixed', bottom: '30px', right: '30px', width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#059669', color: 'white', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.2)', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, transition: 'transform 0.2s' };
 const badgeStyle = { position: 'absolute', top: '-2px', right: '-2px', backgroundColor: '#ef4444', color: 'white', fontSize: '12px', fontWeight: 'bold', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', border: '2px solid white' };
 const chatWindowStyle = { position: 'fixed', bottom: '30px', right: '30px', width: '350px', height: '500px', backgroundColor: 'white', borderRadius: '20px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', zIndex: 9998, overflow: 'hidden', border: '1px solid #e2e8f0' };

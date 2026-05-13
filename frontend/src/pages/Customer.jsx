@@ -17,17 +17,70 @@ export default function Customer({ user, openAuth }) {
     }
   }, [notification]);
 
- const [products, setProducts] = useState([]);
- useEffect(() => {
-  fetch("http://localhost:8000/api/products")
-    .then((res) => res.json())
-    .then((data) => {
-      setProducts(data);
-    })
-    .catch((err) => {
-      console.log(err);
+  const [products, setProducts] = useState([]);
+  const [userOrders, setUserOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        setProducts(data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (view === 'orders' && user?.email) {
+      setLoadingOrders(true);
+      fetch(`http://localhost:8000/api/orders/${user.email}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setUserOrders(data);
+          setLoadingOrders(false);
+        })
+        .catch((err) => {
+          console.error("Siparişler yüklenemedi:", err);
+          setLoadingOrders(false);
+        });
+    }
+  }, [view, user?.email]);
+
+  const handleCancelOrder = (orderId) => {
+    if (window.confirm(`Sipariş #${orderId} iptal edilecek. Emin misiniz?`)) {
+      fetch(`http://localhost:8000/api/orders/${orderId}/cancel`, { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+          setNotification(`Sipariş #${orderId} iptal edildi. 🛑`);
+          // Refresh orders
+          fetch(`http://localhost:8000/api/orders/${user.email}`)
+            .then(res => res.json())
+            .then(data => setUserOrders(data));
+        })
+        .catch(err => console.error("İptal hatası:", err));
+    }
+  };
+
+  const handleReorder = (order) => {
+    order.items.forEach(item => {
+      addToCart(item);
     });
-}, []);
+    setNotification("Eski siparişinizdeki ürünler sepete eklendi! 🛒");
+    setView('cart');
+  };
+
+  const fillMockData = () => {
+    setPaymentInfo({
+      card: '4242 4242 4242 4242',
+      expiry: '12/28',
+      cvv: '123',
+      address: 'Merkez Mah. Ataturk Cad. No:123 Kadikoy, Istanbul'
+    });
+    setErrors({});
+    setNotification("Ödeme bilgileri otomatik dolduruldu! 💳");
+  };
 
   const normalizeText = (str) => str.toLowerCase().replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c').trim();
   const getLevenshteinDistance = (a, b) => {
@@ -228,19 +281,34 @@ const createOrder = () => {
           </div>
         )}
 
-        {/* ... (Checkout, Success, Orders kısımları aynı) ... */}
         {view === 'checkout' && (
           <div style={{padding: '40px 5%'}}>
             <div style={containerNarrow}>
-              <h3 style={{ marginBottom: '20px' }}><CreditCard size={20} /> Güvenli Ödeme</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 style={{ margin: 0 }}><CreditCard size={20} /> Güvenli Ödeme</h3>
+                <button 
+                  onClick={fillMockData}
+                  style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  Hızlı Doldur ⚡
+                </button>
+              </div>
+              
               <div style={cardForm}>
                 <div style={{ ...inputGroup, borderColor: errors.address ? '#ef4444' : '#eee' }}><Home size={18} color="#9ca3af" /> <input type="text" placeholder="Teslimat Adresi" value={paymentInfo.address} onChange={(e) => handlePaymentInput('address', e.target.value)} style={input} /></div>{errors.address && <span style={errorText}>{errors.address}</span>}
                 <div style={{ ...inputGroup, borderColor: errors.card ? '#ef4444' : '#eee' }}><CreditCard size={18} color="#9ca3af" /> <input type="text" placeholder="0000 0000 0000 0000" value={paymentInfo.card} onChange={(e) => handlePaymentInput('card', e.target.value)} style={{ ...input, letterSpacing: '2px', fontWeight: 'bold' }} /></div>{errors.card && <span style={errorText}>{errors.card}</span>}
                 <div style={{ display: 'flex', gap: '10px' }}><div style={{ flex: 1 }}><div style={{ ...inputGroup, borderColor: errors.expiry ? '#ef4444' : '#eee' }}><input type="text" placeholder="AA/YY" value={paymentInfo.expiry} onChange={(e) => handlePaymentInput('expiry', e.target.value)} style={input} /></div>{errors.expiry && <span style={errorText}>{errors.expiry}</span>}</div><div style={{ flex: 1 }}><div style={{ ...inputGroup, borderColor: errors.cvv ? '#ef4444' : '#eee' }}><input type="text" placeholder="CVV" value={paymentInfo.cvv} onChange={(e) => handlePaymentInput('cvv', e.target.value)} style={input} /></div>{errors.cvv && <span style={errorText}>{errors.cvv}</span>}</div></div>
+                
                 <div style={totalSummary}>Ödenecek Tutar: <strong>{totalPrice} TL</strong></div>
+                
                 <button style={{ ...payBtn, opacity: !isFormValid ? 0.6 : 1, cursor: isFormValid ? 'pointer' : 'not-allowed' }} disabled={!isFormValid} onClick={createOrder}>
                   {isFormValid ? "Ödemeyi Tamamla" : "Bilgileri Kontrol Edin"}
                 </button>
+
+                <div style={{ textAlign: 'center', marginTop: '15px' }}>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                    <CheckCircle size={12} color="#059669" /> 256-bit SSL ve PCI-DSS Güvencesi
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -258,15 +326,67 @@ const createOrder = () => {
         {view === 'orders' && (
           <div style={{ padding: '40px 5%', maxWidth: '700px', margin: '0 auto' }}>
             <h3 style={{ marginBottom: '20px' }}>Aktif Siparişlerim</h3>
-            <div style={orderCard}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><strong>Sipariş #1284</strong><span style={{ color: '#059669', fontWeight:'bold' }}>Yolda</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div style={step}><CheckCircle size={20} color="#059669"/><br />Onay</div>
-                <div style={step}><Package size={20} color="#059669"/><br />Hazırlık</div>
-                <div style={step}><Truck size={20} color="#059669"/><br />Yolda</div>
-                <div style={{ ...step, color: '#9ca3af' }}><MapPin size={20} /><br />Teslim</div>
+            
+            {loadingOrders ? (
+              <p>Siparişleriniz yükleniyor...</p>
+            ) : userOrders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', background: 'white', borderRadius: '20px', border: '1px solid #eee' }}>
+                <Package size={40} color="#94a3b8" style={{ marginBottom: '10px' }} />
+                <p>Henüz bir siparişiniz bulunmuyor.</p>
+                <button style={secondaryBtn} onClick={() => setView('shop')}>Alışverişe Başla</button>
               </div>
-            </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {userOrders.map((order) => (
+                  <div key={order.id} style={orderCard}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                      <strong>Sipariş #{order.id}</strong>
+                      <span style={{ 
+                        color: order.status === 'İptal Edildi' ? '#ef4444' : '#059669', 
+                        fontWeight: 'bold' 
+                      }}>
+                        {order.status}
+                      </span>
+                    </div>
+                    
+                    {order.status !== 'İptal Edildi' ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div style={step}><CheckCircle size={20} color="#059669"/><br />Onay</div>
+                        <div style={step}><Package size={20} color={(order.status === 'Yolda' || order.status === 'Teslim Edildi' || order.status === 'Hazırlanıyor') ? "#059669" : "#9ca3af"}/><br />Hazırlık</div>
+                        <div style={step}><Truck size={20} color={(order.status === 'Yolda' || order.status === 'Teslim Edildi') ? "#059669" : "#9ca3af"}/><br />Yolda</div>
+                        <div style={{ ...step, color: order.status === 'Teslim Edildi' ? '#059669' : '#9ca3af' }}><MapPin size={20} /><br />Teslim</div>
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '14px', color: '#64748b', textAlign: 'center' }}>Bu sipariş iptal edilmiştir.</p>
+                    )}
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #f1f5f9' }}>
+                      <div style={{ fontSize: '13px', color: '#64748b' }}>
+                        <strong>Detay:</strong> {order.shipping_details}
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        {order.status === 'Hazırlanıyor' && (
+                          <button 
+                            onClick={() => handleCancelOrder(order.id)}
+                            style={{ padding: '8px 15px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
+                            Siparişi İptal Et
+                          </button>
+                        )}
+                        
+                        {(order.status === 'İptal Edildi' || order.status === 'Teslim Edildi') && (
+                          <button 
+                            onClick={() => handleReorder(order)}
+                            style={{ padding: '8px 15px', background: '#dcfce7', color: '#059669', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <ShoppingCart size={14} /> Yeniden Sipariş Et
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

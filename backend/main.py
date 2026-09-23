@@ -20,7 +20,6 @@ else:
     print("⚠️ GEMINI_API_KEY bulunamadı!")
 
 genai.configure(api_key=api_key)
-# DEĞİŞİKLİK: model versiyonu gemini-1.5-flash olarak güncellendi.
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 
